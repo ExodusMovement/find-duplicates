@@ -95,6 +95,7 @@ const remap = ({ copies }) => {
       version: original.pkg.version,
       original: {
         pkg: original.pkgPath,
+        file: original.path,
       },
       duplicate: {
         pkg: duplicate.pkgPath,
