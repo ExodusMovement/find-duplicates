@@ -1,0 +1,20 @@
+{
+  "name": "@exodus/find-duplicates",
+  "version": "1.0.0",
+  "description": "find duplicate files by hash",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "find-duplicates": "cli.js"
+  },
+  "keywords": [],
+  "author": "mvayngrib",
+  "license": "MIT",
+  "dependencies": {
+    "globby": "^10.0.1",
+    "minimist": "^1.2.0",
+    "p-map": "^3.0.0"
+  }
+}
