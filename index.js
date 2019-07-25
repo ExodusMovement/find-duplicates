@@ -90,9 +90,9 @@ const remap = ({ copies }) => {
       pathToOriginal = `.${Path.sep}${pathToOriginal}`
     }
 
-    const replacement = `module.exports = require('${pathToOriginal}')`
     mapping[duplicate.path] = {
       version: original.pkg.version,
+      size: original.size,
       original: {
         pkg: original.pkgPath,
         file: original.path,
@@ -100,7 +100,6 @@ const remap = ({ copies }) => {
       duplicate: {
         pkg: duplicate.pkgPath,
       },
-      replacement,
     }
   })
 
