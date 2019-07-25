@@ -1,10 +1,12 @@
 const crypto = require('crypto')
-const path = require('path')
+const Path = require('path')
 const { promisify } = require('util')
 const globby = require('globby')
 const fs = require('fs')
+const getPkgDir = require('pkg-dir')
 const readFile = promisify(fs.readFile.bind(fs))
 const writeFile = promisify(fs.writeFile.bind(fs))
+const readJSON = (path) => readFile(path).then((content) => JSON.parse(content))
 const pMap = require('p-map')
 
 const log = console.log.bind(console)
@@ -15,8 +17,18 @@ const alphabetical = (a, b) => {
   return 0
 }
 
+const getPkg = async (filePath) => {
+  const dir = await getPkgDir(filePath)
+  const path = Path.join(dir, 'package.json')
+  return {
+    path: Path.relative(process.cwd(), path),
+    pkg: await readJSON(path),
+  }
+}
+
 const getFileInfo = async ({ path, algorithm }) => {
-  const content = await readFile(path, 'utf8')
+  const [content, pkg] = await Promise.all([readFile(path, 'utf8'), getPkg(path)])
+
   const hash = crypto
     .createHash(algorithm)
     .update(content)
@@ -24,6 +36,8 @@ const getFileInfo = async ({ path, algorithm }) => {
 
   return {
     path,
+    pkg: pkg.pkg,
+    pkgPath: pkg.path,
     hash,
     size: content.length,
     content,
@@ -43,8 +57,8 @@ const find = async ({ target, globs, concurrency = Infinity, algorithm = 'sha1' 
     paths,
     async (path) => {
       const info = await getFileInfo({ path, algorithm })
-      const soFar = byHash.get(info.hash) || { size: info.size, paths: [] }
-      soFar.paths.push(info.path)
+      const soFar = byHash.get(info.hash) || { size: info.size, copies: [] }
+      soFar.copies.push(info)
       byHash.set(info.hash, soFar)
     },
     {
@@ -53,29 +67,40 @@ const find = async ({ target, globs, concurrency = Infinity, algorithm = 'sha1' 
   )
 
   // remove files with no duplicates
-  const haveDuplicates = [...byHash].filter(([hash, { paths }]) => paths.length > 1)
+  const haveDuplicates = [...byHash].filter(([hash, { copies }]) => copies.length > 1)
   return new Map(haveDuplicates)
 }
 
-const chooseOriginal = (paths) => {
-  const [original, ...duplicates] = paths.slice().sort(alphabetical)
+const chooseOriginal = (copies) => {
+  const [original, ...duplicates] = copies.slice().sort((a, b) => alphabetical(a.path, b.path))
   return {
     original,
     duplicates,
   }
 }
 
-const remap = ({ paths }) => {
-  const { original, duplicates } = chooseOriginal(paths)
+const remap = ({ copies }) => {
+  const { original, duplicates } = chooseOriginal(copies)
   const mapping = {}
 
   duplicates.forEach((duplicate) => {
-    let pathToOriginal = path.relative(path.dirname(duplicate), original)
+    const dupDir = Path.dirname(duplicate.path)
+    let pathToOriginal = Path.relative(dupDir, original.path)
     if (!pathToOriginal.startsWith('..')) {
-      pathToOriginal = `.${path.sep}${pathToOriginal}`
+      pathToOriginal = `.${Path.sep}${pathToOriginal}`
     }
 
-    mapping[duplicate] = `module.exports = require('${pathToOriginal}')`
+    const replacement = `module.exports = require('${pathToOriginal}')`
+    mapping[duplicate.path] = {
+      version: original.pkg.version,
+      original: {
+        pkg: original.pkgPath,
+      },
+      duplicate: {
+        pkg: duplicate.pkgPath,
+      },
+      replacement,
+    }
   })
 
   return mapping
@@ -87,8 +112,8 @@ const findAndRemap = async (opts) => {
 
   const mapping = {}
 
-  byHash.forEach(({ paths }, hash) => {
-    Object.assign(mapping, remap({ paths }))
+  byHash.forEach(({ copies }, hash) => {
+    Object.assign(mapping, remap({ copies }))
   })
 
   return mapping

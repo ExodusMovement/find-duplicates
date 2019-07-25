@@ -15,6 +15,7 @@
   "dependencies": {
     "globby": "^10.0.1",
     "minimist": "^1.2.0",
-    "p-map": "^3.0.0"
+    "p-map": "^3.0.0",
+    "pkg-dir": "^4.2.0"
   }
 }
