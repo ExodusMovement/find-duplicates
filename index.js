@@ -18,11 +18,14 @@ const alphabetical = (a, b) => {
 }
 
 const getPkg = async (filePath) => {
-  const dir = await getPkgDir(filePath)
+  let dir = await getPkgDir(filePath)
+  dir = Path.relative(process.cwd(), dir)
+
   const path = Path.join(dir, 'package.json')
   return {
-    path: Path.relative(process.cwd(), path),
-    pkg: await readJSON(path),
+    path,
+    dir,
+    content: await readJSON(path),
   }
 }
 
@@ -36,8 +39,7 @@ const getFileInfo = async ({ path, algorithm }) => {
 
   return {
     path,
-    pkg: pkg.pkg,
-    pkgPath: pkg.path,
+    pkg,
     hash,
     size: content.length,
     content,
@@ -81,39 +83,39 @@ const chooseOriginal = (copies) => {
 
 const remap = ({ copies }) => {
   const { original, duplicates } = chooseOriginal(copies)
-  const mapping = {}
+  const mapping = []
 
-  duplicates.forEach((duplicate) => {
-    const dupDir = Path.dirname(duplicate.path)
-    let pathToOriginal = Path.relative(dupDir, original.path)
-    if (!pathToOriginal.startsWith('..')) {
-      pathToOriginal = `.${Path.sep}${pathToOriginal}`
-    }
+  // output:
+  //   {
+  //     "original": "node_modules/a/node_modules/lodash",
+  //     "version": "4.16.6",
+  //     "file": "lodash.js",
+  //     "size": 12345,
+  //     "duplicates": [
+  //       "node_modules/b/node_modules/lodash",
+  //       "node_modules/c/node_modules/lodash"
+  //     ]
+  //   }
 
-    mapping[duplicate.path] = {
-      version: original.pkg.version,
-      size: original.size,
-      original: {
-        pkg: original.pkgPath,
-        file: original.path,
-      },
-      duplicate: {
-        pkg: duplicate.pkgPath,
-      },
-    }
-  })
-
-  return mapping
+  const { pkg, size, path } = original
+  return {
+    original: pkg.dir,
+    version: pkg.content.version,
+    // based on cwd
+    file: Path.relative(pkg.dir, path),
+    size,
+    duplicates: duplicates.map((duplicate) => duplicate.pkg.dir),
+  }
 }
 
 // find first, then remap, so that we can choose an "original" for each set of duplicates deterministically
 const findAndRemap = async (opts) => {
   const byHash = await find(opts)
 
-  const mapping = {}
+  let mapping = []
 
   byHash.forEach(({ copies }, hash) => {
-    Object.assign(mapping, remap({ copies }))
+    mapping = mapping.concat(remap({ copies }))
   })
 
   return mapping
