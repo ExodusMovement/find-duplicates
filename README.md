@@ -4,7 +4,7 @@ find duplicate files in your filesystem
 # Install
 
 ```sh
-npm i -g ExodusMovement/find-duplicates
+npm i -g @exodus/find-duplicates
 ```
 
 # Usage
