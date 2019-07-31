@@ -114,9 +114,13 @@ const findAndRemap = async (opts) => {
 
   let mapping = []
 
-  byHash.forEach(({ copies }, hash) => {
-    mapping = mapping.concat(remap({ copies }))
-  })
+  // sort for determinstic output
+  Array.from(byHash.keys())
+    .sort(alphabetical)
+    .forEach((hash) => {
+      const { copies } = byHash.get(hash)
+      mapping = mapping.concat(remap({ copies }))
+    })
 
   return mapping
 }
