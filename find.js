@@ -5,8 +5,7 @@ const globby = require('globby')
 const fs = require('fs')
 const getPkgDir = require('pkg-dir')
 const readFile = promisify(fs.readFile.bind(fs))
-const writeFile = promisify(fs.writeFile.bind(fs))
-const readJSON = path => readFile(path).then(content => JSON.parse(content))
+const readJSON = (path) => readFile(path).then((content) => JSON.parse(content))
 const pMap = require('p-map')
 
 const alphabetical = (a, b) => {
@@ -15,7 +14,7 @@ const alphabetical = (a, b) => {
   return 0
 }
 
-const getPkg = async filePath => {
+const getPkg = async (filePath) => {
   let dir = await getPkgDir(filePath)
   dir = Path.relative(process.cwd(), dir)
 
@@ -23,15 +22,12 @@ const getPkg = async filePath => {
   return {
     path,
     dir,
-    content: await readJSON(path)
+    content: await readJSON(path),
   }
 }
 
 const getFileInfo = async ({ path, algorithm }) => {
-  const [content, pkg] = await Promise.all([
-    readFile(path, 'utf8'),
-    getPkg(path)
-  ])
+  const [content, pkg] = await Promise.all([readFile(path, 'utf8'), getPkg(path)])
 
   const hash = crypto
     .createHash(algorithm)
@@ -43,58 +39,49 @@ const getFileInfo = async ({ path, algorithm }) => {
     pkg,
     hash,
     size: content.length,
-    content
+    content,
   }
 }
 
-const getHumanReadableSize = size => (size / 1000).toFixed(1) + 'KB'
-
-const find = async ({
-  target,
-  globs,
-  concurrency = Infinity,
-  algorithm = 'sha1'
-}) => {
+const find = async ({ globs, concurrency = Infinity, algorithm = 'sha1' }) => {
   const paths = await globby(globs, {
     cwd: process.cwd(),
     onlyFiles: true,
-    followSymbolicLinks: false
+    followSymbolicLinks: false,
   })
 
   const byHash = new Map()
   await pMap(
     paths,
-    async path => {
+    async (path) => {
       const info = await getFileInfo({ path, algorithm })
       const soFar = byHash.get(info.hash) || { size: info.size, copies: [] }
       soFar.copies.push(info)
       byHash.set(info.hash, soFar)
     },
     {
-      concurrency
+      concurrency,
     }
   )
 
   // remove files with no duplicates
   const haveDuplicates = [...byHash].filter(
+    // eslint-disable-next-line no-unused-vars
     ([hash, { copies }]) => copies.length > 1
   )
   return new Map(haveDuplicates)
 }
 
-const chooseOriginal = copies => {
-  const [original, ...duplicates] = copies
-    .slice()
-    .sort((a, b) => alphabetical(a.path, b.path))
+const chooseOriginal = (copies) => {
+  const [original, ...duplicates] = copies.slice().sort((a, b) => alphabetical(a.path, b.path))
   return {
     original,
-    duplicates
+    duplicates,
   }
 }
 
 const remap = ({ copies }) => {
   const { original, duplicates } = chooseOriginal(copies)
-  const mapping = []
 
   // output:
   //   {
@@ -115,12 +102,12 @@ const remap = ({ copies }) => {
     // based on cwd
     file: Path.relative(pkg.dir, path),
     size,
-    duplicates: duplicates.map(duplicate => duplicate.pkg.dir)
+    duplicates: duplicates.map((duplicate) => duplicate.pkg.dir),
   }
 }
 
 // find first, then remap, so that we can choose an "original" for each set of duplicates deterministically
-const findAndRemap = async opts => {
+const findAndRemap = async (opts) => {
   const byHash = await find(opts)
 
   let mapping = []
@@ -128,7 +115,7 @@ const findAndRemap = async opts => {
   // sort for determinstic output
   Array.from(byHash.keys())
     .sort(alphabetical)
-    .forEach(hash => {
+    .forEach((hash) => {
       const { copies } = byHash.get(hash)
       mapping = mapping.concat(remap({ copies }))
     })
@@ -139,5 +126,5 @@ const findAndRemap = async opts => {
 module.exports = {
   find,
   remap,
-  findAndRemap
+  findAndRemap,
 }

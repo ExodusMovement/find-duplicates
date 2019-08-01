@@ -15,7 +15,7 @@ const flattenEntry = (entry) =>
 const flattenEntries = (entries) =>
   entries.reduce((flat, entry) => flat.concat(flattenEntry(entry)), [])
 
-const getReplacement = async ({ header = '', version, original, duplicate, file, dryRun }) => {
+const getReplacement = async ({ header = '', version, original, duplicate, file }) => {
   const originalPkg = require(path.resolve(process.cwd(), original, 'package.json'))
   if (originalPkg.version !== version) {
     throw new Error(
@@ -54,7 +54,7 @@ const getReplacement = async ({ header = '', version, original, duplicate, file,
   if (duplicateContents === replacement) return
 
   // allow overwriting previous deduplication
-  if (duplicateContents !== originalContents && !duplicateContents.startsWith(HEADER)) {
+  if (duplicateContents !== originalContents && !duplicateContents.startsWith(header)) {
     throw new Error(
       `original and duplicate contents don't match:
 
@@ -63,7 +63,6 @@ duplicate: ${dupFilePath}`
     )
   }
 
-  console.log(`replacing: ${dupFilePath}`)
   const absPath = path.resolve(process.cwd(), dupFilePath)
   return {
     path: absPath,
