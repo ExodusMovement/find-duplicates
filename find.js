@@ -40,6 +40,7 @@ const getFileInfo = async ({ path, algorithm }) => {
     hash,
     size: content.length,
     content,
+    id: `${pkg.content.version}:${hash}`,
   }
 }
 
@@ -55,9 +56,9 @@ const find = async ({ globs, concurrency = Infinity, algorithm = 'sha1' }) => {
     paths,
     async (path) => {
       const info = await getFileInfo({ path, algorithm })
-      const soFar = byHash.get(info.hash) || { size: info.size, copies: [] }
+      const soFar = byHash.get(info.id) || { size: info.size, copies: [] }
       soFar.copies.push(info)
-      byHash.set(info.hash, soFar)
+      byHash.set(info.id, soFar)
     },
     {
       concurrency,
