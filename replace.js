@@ -42,7 +42,7 @@ const getReplacement = async ({ header = '', version, original, duplicate, file 
   duplicateContents = duplicateContents.trim()
 
   if (originalContents.startsWith(header)) {
-    throw new Error(`original is already a deduplicated file: ${original.file}`)
+    throw new Error(`original is already a deduplicated file: ${origFilePath}`)
   }
 
   const pathFromDuplicateToOriginal = path.relative(path.dirname(dupFilePath), origFilePath)
@@ -58,7 +58,7 @@ const getReplacement = async ({ header = '', version, original, duplicate, file 
     throw new Error(
       `original and duplicate contents don't match:
 
-original: ${original.file}
+original: ${origFilePath}
 duplicate: ${dupFilePath}`
     )
   }
