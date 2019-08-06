@@ -50,6 +50,7 @@ const getHumanReadableSize = (size) => (size / 1000).toFixed(1) + 'KB'
 
 const find = async ({ target, globs, concurrency = Infinity, algorithm = 'sha1' }) => {
   const paths = await globby(globs, {
+    cwd: process.cwd(),
     onlyFiles: true,
     followSymbolicLinks: false,
   })
