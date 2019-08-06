@@ -1,6 +1,6 @@
 {
   "name": "@exodus/find-duplicates",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "find duplicate files by hash",
   "main": "index.js",
   "scripts": {
