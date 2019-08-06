@@ -50,8 +50,16 @@ const getReplacement = async ({ header = '', version, original, duplicate, file 
     pathFromDuplicateToOriginal
   )})`
 
+  const absPath = path.resolve(process.cwd(), dupFilePath)
+  const ret = {
+    path: absPath,
+    content: replacement,
+  }
+
   // we might have replaced it already
-  if (duplicateContents === replacement) return
+  if (duplicateContents === replacement) {
+    return { ...ret, alreadyReplaced: true }
+  }
 
   // allow overwriting previous deduplication
   if (duplicateContents !== originalContents && !duplicateContents.startsWith(header)) {
@@ -63,11 +71,7 @@ duplicate: ${dupFilePath}`
     )
   }
 
-  const absPath = path.resolve(process.cwd(), dupFilePath)
-  return {
-    path: absPath,
-    content: replacement,
-  }
+  return ret
 }
 
 const replace = ({ path, content }) => write(path, content)
