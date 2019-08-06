@@ -1,10 +1,7 @@
 const { find, remap, findAndRemap } = require('./find')
-const {
-  getReplacement,
-  replace,
-  flattenEntry,
-  flattenEntries
-} = require('./replace')
+const { getReplacement, replace, flattenEntry, flattenEntries } = require('./replace')
+
+const { version } = require('./package')
 
 module.exports = {
   // find
@@ -15,5 +12,7 @@ module.exports = {
   getReplacement,
   replace,
   flattenEntry,
-  flattenEntries
+  flattenEntries,
+  // version
+  version,
 }
