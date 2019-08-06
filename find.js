@@ -8,6 +8,8 @@ const readFile = promisify(fs.readFile.bind(fs))
 const readJSON = (path) => readFile(path).then((content) => JSON.parse(content))
 const pMap = require('p-map')
 
+const alwaysTrue = () => true
+
 const alphabetical = (a, b) => {
   if (a < b) return -1
   if (a > b) return 1
@@ -44,7 +46,7 @@ const getFileInfo = async ({ path, algorithm }) => {
   }
 }
 
-const find = async ({ globs, concurrency = Infinity, algorithm = 'sha1' }) => {
+const find = async ({ globs, concurrency = Infinity, algorithm = 'sha1', filter = alwaysTrue }) => {
   const paths = await globby(globs, {
     cwd: process.cwd(),
     onlyFiles: true,
@@ -56,6 +58,8 @@ const find = async ({ globs, concurrency = Infinity, algorithm = 'sha1' }) => {
     paths,
     async (path) => {
       const info = await getFileInfo({ path, algorithm })
+      if (!filter(info)) return
+
       const soFar = byHash.get(info.id) || { size: info.size, copies: [] }
       soFar.copies.push(info)
       byHash.set(info.id, soFar)
