@@ -14,10 +14,10 @@
   "author": "mvayngrib",
   "license": "MIT",
   "dependencies": {
-    "globby": "8.0.1",
-    "minimist": "1.2.0",
-    "p-map": "1.2.0",
-    "pkg-dir": "3.0.0"
+    "globby": "^8.0.1",
+    "minimist": "^1.2.5",
+    "p-map": "^1.2.0",
+    "pkg-dir": "^3.0.0"
   },
   "devDependencies": {
     "babel-eslint": "^10.0.1",
